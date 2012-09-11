@@ -5,12 +5,14 @@ api_version: 1
 threadsafe: yes
 
 handlers:
-- url: /favicon\.ico
-  static_files: favicon.ico
-  upload: favicon\.ico
-
-- url: .*
+- url: /login
   script: main.app
+  secure: always
+  login: required
+
+- url: /logout
+  script: main.app
+  secure: always
 
 libraries:
 - name: webapp2

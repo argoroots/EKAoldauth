@@ -1,24 +1,60 @@
 #!/usr/bin/env python
-#
-# Copyright 2007 Google Inc.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
+
 import webapp2
+import hashlib
+import base64
+from random import randint
+from datetime import *
 
-class MainHandler(webapp2.RequestHandler):
+from google.appengine.ext import db
+from google.appengine.api import channel
+from google.appengine.api import users
+
+
+class Settings(db.Model):
+    value  = db.StringProperty(default='', indexed=False)
+
+
+class Users(db.Model):
+    last_login  = db.DateTimeProperty(auto_now=True)
+    login_count = db.IntegerProperty(default=0)
+
+
+class LogIn(webapp2.RequestHandler):
     def get(self):
-        self.response.out.write('Hello world!')
+        login_url = Settings().get_or_insert('login_url')
+        logout_url = Settings().get_or_insert('logout_url')
+        secret = Settings().get_or_insert('secret')
 
-app = webapp2.WSGIApplication([('/', MainHandler)],
-                              debug=True)
+        user = users.get_current_user()
+        if not user:
+            return self.redirect(logout_url.value)
+
+        if not user.email():
+            return self.redirect(logout_url.value)
+
+        user_key = hashlib.md5(user.email() + (datetime.today() + timedelta(hours=2)).strftime('%Y-%m-%d') + secret.value).hexdigest()
+        key = base64.b64encode(user_key + user.email())
+
+        current_user = Users().get_or_insert(user.email())
+        current_user.login_count += 1
+        current_user.put()
+
+        self.redirect(str(login_url.value % key))
+
+
+class LogOut(webapp2.RequestHandler):
+    def get(self):
+        logout_url = Settings().get_or_insert('logout_url')
+
+        user = users.get_current_user()
+        if user:
+            self.redirect(str(users.create_logout_url(logout_url.value)))
+        else:
+            self.redirect(str(logout_url.value))
+
+
+app = webapp2.WSGIApplication([
+    ('/login', LogIn),
+    ('/logout', LogOut),
+], debug=True)
