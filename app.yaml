@@ -4,10 +4,6 @@ runtime: python27
 api_version: 1
 threadsafe: true
 
-automatic_scaling:
-  max_idle_instances: 1
-  min_pending_latency: 15.0s
-
 handlers:
 - url: /login
   script: main.app
