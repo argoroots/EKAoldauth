@@ -4,6 +4,10 @@ runtime: python27
 api_version: 1
 threadsafe: true
 
+libraries:
+- name: webapp2
+  version: "latest"
+
 handlers:
 - url: /login
   script: main.app
@@ -13,7 +17,3 @@ handlers:
 - url: /logout
   script: main.app
   secure: always
-
-libraries:
-- name: webapp2
-  version: "latest"
