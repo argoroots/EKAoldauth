@@ -3,11 +3,9 @@
 import webapp2
 import hashlib
 import base64
-from random import randint
 from datetime import *
 
 from google.appengine.ext import db
-from google.appengine.api import channel
 from google.appengine.api import users
 
 
